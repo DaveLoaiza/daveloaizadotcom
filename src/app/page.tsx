@@ -23,7 +23,12 @@ export default function Page() {
         <div className="md:col-span-2">
           {/* About Me Text Section */}
           <div className="prose max-w-none">
-            <p>Hey there, I'm Dave Loaiza. I recently moved back to the New York City area after twelve years living in the SF Bay area. I work in technical go-to-market post sales. I'm passionate about working with customers to implement technical solutions that make bottom-line business impacts. I'm just getting started on this page -- more to come soon.</p>
+            <p>
+              Hey there, I&apos;m Dave Loaiza. I recently moved back to the New York City area after twelve years living in 
+              the SF Bay area. I work in technical go-to-market post sales for enterprise software products. I&apos;m passionate about working with customers 
+              to implement technical solutions that make bottom-line business impacts. I&apos;m just getting started on this 
+              page -- more to come soon.
+            </p>
           </div>
         </div>
       </div>
