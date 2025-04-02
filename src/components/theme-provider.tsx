@@ -10,6 +10,9 @@ type ThemeProviderProps = {
   children: React.ReactNode
   defaultTheme?: Theme
   storageKey?: string
+  attribute?: string
+  enableSystem?: boolean
+  disableTransitionOnChange?: boolean
 }
 
 type ThemeProviderState = {
@@ -28,29 +31,87 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "theme",
+  attribute = "data-theme",
+  enableSystem = true,
+  disableTransitionOnChange = false,
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme)
+  const [theme, setTheme] = useState<Theme>(() =>
+    typeof localStorage !== "undefined" ? (localStorage.getItem(storageKey) as Theme) || defaultTheme : defaultTheme,
+  )
 
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove("light", "dark")
+    // Remove old attribute value
+    const dataAttribute = attribute === "class" ? "class" : `${attribute}`
 
-    if (theme === "system") {
+    if (attribute === "class") {
+      root.classList.remove("light", "dark")
+    } else {
+      root.removeAttribute(dataAttribute)
+    }
+
+    // Add new attribute value
+    if (theme === "system" && enableSystem) {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
-      root.classList.add(systemTheme)
+      if (attribute === "class") {
+        if (!disableTransitionOnChange) {
+          root.classList.add(systemTheme)
+        } else {
+          root.classList.add("no-transition")
+          root.classList.add(systemTheme)
+          // Force a reflow
+          window.getComputedStyle(root).getPropertyValue("opacity")
+          root.classList.remove("no-transition")
+        }
+      } else {
+        root.setAttribute(dataAttribute, systemTheme)
+      }
       return
     }
 
-    root.classList.add(theme)
-  }, [theme])
+    if (attribute === "class") {
+      if (!disableTransitionOnChange) {
+        root.classList.add(theme)
+      } else {
+        root.classList.add("no-transition")
+        root.classList.add(theme)
+        // Force a reflow
+        window.getComputedStyle(root).getPropertyValue("opacity")
+        root.classList.remove("no-transition")
+      }
+    } else {
+      root.setAttribute(dataAttribute, theme)
+    }
+  }, [theme, attribute, enableSystem, disableTransitionOnChange])
+
+  // Listen for system theme changes
+  useEffect(() => {
+    if (!enableSystem) return
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+
+    const onSystemThemeChange = () => {
+      if (theme === "system") {
+        setTheme("system")
+      }
+    }
+
+    mediaQuery.addEventListener("change", onSystemThemeChange)
+
+    return () => {
+      mediaQuery.removeEventListener("change", onSystemThemeChange)
+    }
+  }, [theme, enableSystem])
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(storageKey, theme)
+      }
       setTheme(theme)
     },
   }
